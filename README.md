@@ -16,6 +16,8 @@ Book Market personal Project. Implementation Microservice with monorepo.
 * Docker
 
 # Todo
+- [ ] Api spesification (Swagger)
+- [ ] Diagram asitecture
 - [ ] User Authentication
 - [ ] Resource Book
 - [ ] Order Feature
