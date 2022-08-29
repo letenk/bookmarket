@@ -16,7 +16,7 @@ Book Market personal Project. Implementation Microservice with monorepo.
 * Docker
 
 # Todo
-- [] User Authentication
-- [] Resource Book
-- [] Order Feature
-- [] Containerization
+- [ ] User Authentication
+- [ ] Resource Book
+- [ ] Order Feature
+- [ ] Containerization
