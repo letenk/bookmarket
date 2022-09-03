@@ -8,6 +8,6 @@ import (
 func main() {
 	// Run server
 	server := routes.SetupRouter()
-	log.Println("Starting api gateway on port 8080")
-	server.Run(":8080")
+	log.Println("Starting api gateway on port 80")
+	server.Run(":80")
 }
