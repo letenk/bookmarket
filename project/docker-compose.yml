@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  api-gateway:
+    build:
+      context: ./../api-gateway
+      dockerfile: ./../api-gateway/api-gateway.dockerfile
+    restart: always
+    ports:
+      - "8080:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+
+  authentication-service:
+    build:
+      context: ./../authentication-service
+      dockerfile: ./../authentication-service/authentication-service.dockerfile
+    restart: always
+    ports:
+      - "8081:80"
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      DSN: "host=db_authentication port=5432 user=postgres password=password dbname=users sslmode=disable timezone=UTC connect_timeout=5"
+    depends_on:
+      - db_authentication
+  
+  db_authentication:
+    image: 'postgres:14.2'
+    ports:
+      - "5432:5432"
+    restart: always
+    deploy:
+      mode: replicated
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users
+    volumes:
+      - db-authentication:/var/lib/postgresql/data/
+      - ./sql/create_table_users.sql:/docker-entrypoint-initdb.d/create_table_users.sql # create table users if not exist used file /init/01.sql
+
+volumes:
+  db-authentication:

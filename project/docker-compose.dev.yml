@@ -1,0 +1,21 @@
+version: '3.9'
+
+services:
+  db_bookmarket_dev:
+      image: 'postgres:14.2'
+      ports:
+        - "5433:5432"
+      restart: always
+      deploy:
+        mode: replicated
+        replicas: 1
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: password
+        POSTGRES_DB: users
+      volumes:
+        - db-bookmarket_dev:/var/lib/postgresql/data/
+        - ./sql/create_table_users.sql:/docker-entrypoint-initdb.d/create_table_users.sql # create table users if not exist used file /init/01.sql
+
+volumes:
+  db-bookmarket_dev:
