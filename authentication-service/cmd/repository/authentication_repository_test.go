@@ -3,15 +3,25 @@ package repository
 import (
 	"authentication_service/cmd/config"
 	"authentication_service/cmd/models/domain"
+	"database/sql"
 	"log"
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
+	"github.com/rizkydarmawan-letenk/jabufaker"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
 )
 
+// truncateUsers as truncate table users
+func truncateUsers(db *sql.DB) {
+	db.Exec("TRUNCATE users")
+}
+
 func TestInsertUserSuccess(t *testing.T) {
+	// Load file .env
+	godotenv.Load("../../.env")
 	// Open connection
 	// Connection to DB
 	conn := config.SetupDB()
@@ -19,6 +29,9 @@ func TestInsertUserSuccess(t *testing.T) {
 		log.Panic("Can't connect to Postgres!")
 	}
 	defer conn.Close()
+
+	// Truncate table users before test running
+	truncateUsers(conn)
 
 	// Used repository
 	repo := NewRepositoryUser(conn)
@@ -32,15 +45,19 @@ func TestInsertUserSuccess(t *testing.T) {
 		log.Panicf("Hashing password failed, err: %s\n", err)
 	}
 
+	// Getting random province and regencies for city
+	province := jabufaker.RandomProvince()
+	regency := jabufaker.RandomRegency(province)
+
 	// Create sample data
 	user := domain.User{
 		ID:       id,
-		Fullname: "Rizky Darmawan",
-		Email:    "letenk@test.com",
-		Address:  "Jl. Jalan",
-		City:     "Binjai",
-		Province: "Sumatera Utara",
-		Mobile:   "082277760694",
+		Fullname: jabufaker.RandomPerson(),
+		Email:    jabufaker.RandomEmail(),
+		Address:  jabufaker.RandomString(20),
+		City:     regency,
+		Province: province,
+		Mobile:   "082233377728",
 		Password: string(hashedPassword),
 		Role:     "admin",
 	}
@@ -66,5 +83,4 @@ func TestInsertUserSuccess(t *testing.T) {
 	// Test pass password, but before test compare first
 	err = bcrypt.CompareHashAndPassword([]byte(newUser.Password), []byte("password"))
 	assert.Nil(t, err)
-
 }
