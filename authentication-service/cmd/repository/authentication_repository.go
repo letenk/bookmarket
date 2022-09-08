@@ -4,11 +4,10 @@ import (
 	"authentication_service/cmd/models/domain"
 	"context"
 	"database/sql"
-	"time"
 )
 
 type Repository interface {
-	Insert(user domain.User) (domain.User, error)
+	Insert(ctx context.Context, user domain.User) (domain.User, error)
 }
 
 type repository struct {
@@ -19,13 +18,8 @@ func NewRepositoryUser(db *sql.DB) *repository {
 	return &repository{db}
 }
 
-const dbTimeout = time.Second * 3
-
 // Inser a new user into the database, and return the newly user inserted row
-func (r *repository) Insert(user domain.User) (domain.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
-	defer cancel()
-
+func (r *repository) Insert(ctx context.Context, user domain.User) (domain.User, error) {
 	stmt := `INSERT INTO 
 				users (id, fullname, email, address, city, province, mobile, password, role)
 			VALUES 
