@@ -3,9 +3,11 @@ package repository
 import (
 	"authentication_service/cmd/config"
 	"authentication_service/cmd/models/domain"
+	"context"
 	"database/sql"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -36,6 +38,10 @@ func TestInsertUserSuccess(t *testing.T) {
 	// Used repository
 	repo := NewRepositoryUser(conn)
 
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
 	// Generate uuid
 	id := uuid.New()
 	pass := "password"
@@ -63,7 +69,7 @@ func TestInsertUserSuccess(t *testing.T) {
 	}
 
 	// Insert user
-	newUser, err := repo.Insert(user)
+	newUser, err := repo.Insert(ctx, user)
 	if err != nil {
 		log.Panic(err)
 	}
