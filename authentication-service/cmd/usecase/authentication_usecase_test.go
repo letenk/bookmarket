@@ -5,11 +5,9 @@ import (
 	"authentication_service/cmd/models/domain"
 	"authentication_service/cmd/models/web"
 	"authentication_service/cmd/repository"
-	"context"
 	"database/sql"
 	"log"
 	"testing"
-	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/rizkydarmawan-letenk/jabufaker"
@@ -42,10 +40,6 @@ func RegisterRandomUser(t *testing.T) domain.User {
 	// Use usecase
 	authenticationUseCase := NewUseCaseUser(authenticationRepository)
 
-	// Create context
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	defer cancel()
-
 	// Getting random province and regencies for city
 	province := jabufaker.RandomProvince()
 	regency := jabufaker.RandomRegency(province)
@@ -63,7 +57,7 @@ func RegisterRandomUser(t *testing.T) domain.User {
 	}
 
 	// Register user
-	newUser, err := authenticationUseCase.Register(ctx, user)
+	newUser, err := authenticationUseCase.Register(user)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -111,10 +105,6 @@ func TestRegisterFailEmailIsAvailable(t *testing.T) {
 	// Use usecase
 	authenticationUseCase := NewUseCaseUser(authenticationRepository)
 
-	// Create context
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	defer cancel()
-
 	user := web.RegisterInput{
 		Fullname: newUser.Fullname,
 		Email:    newUser.Email,
@@ -126,7 +116,7 @@ func TestRegisterFailEmailIsAvailable(t *testing.T) {
 		Role:     newUser.Role,
 	}
 
-	_, err := authenticationUseCase.Register(ctx, user)
+	_, err := authenticationUseCase.Register(user)
 	// Test pass
 	assert.NotNil(t, err)
 	assert.Equal(t, err.Error(), "email already exist")

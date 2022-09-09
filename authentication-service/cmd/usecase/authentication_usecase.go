@@ -13,7 +13,7 @@ import (
 )
 
 type UseCase interface {
-	Register(ctx context.Context, input web.RegisterInput) (domain.User, error)
+	Register(input web.RegisterInput) (domain.User, error)
 }
 
 type useCase struct {
@@ -24,9 +24,9 @@ func NewUseCaseUser(repository repository.Repository) *useCase {
 	return &useCase{repository}
 }
 
-func (u *useCase) Register(ctx context.Context, input web.RegisterInput) (domain.User, error) {
+func (u *useCase) Register(input web.RegisterInput) (domain.User, error) {
 	// create context with timeout duration 3 second
-	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
 	// Check email is available
