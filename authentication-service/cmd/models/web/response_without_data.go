@@ -6,7 +6,7 @@ type ResponseWithoutData struct {
 	Message string `json:"message"`
 }
 
-func JSONResponseWithoutData(code int, status string, message string) ResponseWithoutData {
+func ApiResponseWithoutData(code int, status string, message string) ResponseWithoutData {
 	jsonResponse := ResponseWithoutData{
 		Code:    code,
 		Status:  status,

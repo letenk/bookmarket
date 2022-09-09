@@ -15,6 +15,6 @@ func main() {
 	}
 
 	// Run server
-	server := routes.SetupRouter()
+	server := routes.SetupRouter(conn)
 	server.Run(":80")
 }
