@@ -21,7 +21,8 @@ func truncateUsers(db *sql.DB) {
 	db.Exec("TRUNCATE users")
 }
 
-func TestInsertUserSuccess(t *testing.T) {
+// InsertRandomUser as function insert random user and if success return new user
+func InsertRandomUser(t *testing.T) domain.User {
 	// Load file .env
 	godotenv.Load("../../.env")
 	// Open connection
@@ -89,4 +90,72 @@ func TestInsertUserSuccess(t *testing.T) {
 	// Test pass password, but before test compare first
 	err = bcrypt.CompareHashAndPassword([]byte(newUser.Password), []byte("password"))
 	assert.Nil(t, err)
+
+	return newUser
+}
+
+// TestInsertUserSuccess as testing function InsertRandomUser is success
+func TestInsertUserSuccess(t *testing.T) {
+	InsertRandomUser(t)
+}
+
+// TestCheckEmailIsAvailable as check email is available if yes, return true
+func TestCheckEmailIsAvailable(t *testing.T) {
+	// Load file .env
+	godotenv.Load("../../.env")
+	// Open connection
+	// Connection to DB
+	conn := config.SetupDB()
+	if conn == nil {
+		log.Panic("Can't connect to Postgres!")
+	}
+	defer conn.Close()
+
+	// Truncate table users before test running
+	truncateUsers(conn)
+
+	// Used repository
+	repo := NewRepositoryUser(conn)
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	// Insert Random user
+	newUser := InsertRandomUser(t)
+
+	// Find by email
+	checkEmail := repo.EmailIsAvailable(ctx, newUser.Email)
+
+	// Test pass
+	assert.True(t, checkEmail)
+}
+
+// TestCheckEmailIsNotAvailable as check email is available if yes, return false
+func TestCheckEmailIsNotAvailable(t *testing.T) {
+	// Load file .env
+	godotenv.Load("../../.env")
+	// Open connection
+	// Connection to DB
+	conn := config.SetupDB()
+	if conn == nil {
+		log.Panic("Can't connect to Postgres!")
+	}
+	defer conn.Close()
+
+	// Truncate table users before test running
+	truncateUsers(conn)
+
+	// Used repository
+	repo := NewRepositoryUser(conn)
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	// Find by email
+	checkEmail := repo.EmailIsAvailable(ctx, "fail@test.com")
+
+	// Test Pass
+	assert.False(t, checkEmail)
 }

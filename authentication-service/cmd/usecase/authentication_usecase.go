@@ -5,6 +5,7 @@ import (
 	"authentication_service/cmd/models/web"
 	"authentication_service/cmd/repository"
 	"context"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,6 +28,13 @@ func (u *useCase) Register(ctx context.Context, input web.RegisterInput) (domain
 	// create context with timeout duration 3 second
 	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
+
+	// Check email is available
+	checkEmail := u.repository.EmailIsAvailable(ctx, input.Email)
+	// If checkEmail is true, return error
+	if checkEmail {
+		return domain.User{}, errors.New("email already exist")
+	}
 
 	// Pass data request into domain user
 	user := domain.User{}

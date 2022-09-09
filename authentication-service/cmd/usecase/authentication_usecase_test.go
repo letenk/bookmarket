@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"authentication_service/cmd/config"
+	"authentication_service/cmd/models/domain"
 	"authentication_service/cmd/models/web"
 	"authentication_service/cmd/repository"
 	"context"
@@ -21,7 +22,8 @@ func truncateUsers(db *sql.DB) {
 	db.Exec("TRUNCATE users")
 }
 
-func TestRegisterUserSuccess(t *testing.T) {
+// Function register random user
+func RegisterRandomUser(t *testing.T) domain.User {
 	// Load file .env
 	godotenv.Load("../../.env")
 	// Open connection
@@ -81,4 +83,51 @@ func TestRegisterUserSuccess(t *testing.T) {
 	// Test pass password, but before test compare first
 	err = bcrypt.CompareHashAndPassword([]byte(newUser.Password), []byte("password"))
 	assert.Nil(t, err)
+
+	return newUser
+}
+
+// TestRegisterSuccess as test register random user is exist
+func TestRegisterSuccess(t *testing.T) {
+	RegisterRandomUser(t)
+}
+
+func TestRegisterFailEmailIsAvailable(t *testing.T) {
+	// Register Random user
+	newUser := RegisterRandomUser(t)
+
+	// Load file .env
+	godotenv.Load("../../.env")
+	// Open connection
+	// Connection to DB
+	conn := config.SetupDB()
+	if conn == nil {
+		log.Panic("Can't connect to Postgres!")
+	}
+	defer conn.Close()
+
+	// Used repository
+	authenticationRepository := repository.NewRepositoryUser(conn)
+	// Use usecase
+	authenticationUseCase := NewUseCaseUser(authenticationRepository)
+
+	// Create context
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	user := web.RegisterInput{
+		Fullname: newUser.Fullname,
+		Email:    newUser.Email,
+		Address:  newUser.Address,
+		City:     newUser.City,
+		Province: newUser.Province,
+		Mobile:   newUser.Mobile,
+		Password: newUser.Password,
+		Role:     newUser.Role,
+	}
+
+	_, err := authenticationUseCase.Register(ctx, user)
+	// Test pass
+	assert.NotNil(t, err)
+	assert.Equal(t, err.Error(), "email already exist")
 }

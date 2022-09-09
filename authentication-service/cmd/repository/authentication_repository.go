@@ -8,6 +8,7 @@ import (
 
 type Repository interface {
 	Insert(ctx context.Context, user domain.User) (domain.User, error)
+	EmailIsAvailable(ctx context.Context, email string) bool
 }
 
 type repository struct {
@@ -18,7 +19,7 @@ func NewRepositoryUser(db *sql.DB) *repository {
 	return &repository{db}
 }
 
-// Inser a new user into the database, and return the newly user inserted row
+// Insert a new user into the database, and return the newly user inserted row
 func (r *repository) Insert(ctx context.Context, user domain.User) (domain.User, error) {
 	stmt := `INSERT INTO 
 				users (id, fullname, email, address, city, province, mobile, password, role)
@@ -59,4 +60,30 @@ func (r *repository) Insert(ctx context.Context, user domain.User) (domain.User,
 	}
 
 	return newUser, nil
+}
+
+// Find by email
+func (r *repository) EmailIsAvailable(ctx context.Context, email string) bool {
+	var user domain.User
+	stmt := `SELECT 
+				id, email 
+			FROM 
+				users
+			WHERE 
+				email = $1 
+			LIMIT 1`
+
+	row := r.db.QueryRowContext(ctx, stmt, email)
+	err := row.Scan(
+		&user.ID,
+		&user.Email,
+	)
+
+	// If email is not available, return false
+	if err != nil {
+		return false
+	}
+
+	// If email is available, return true
+	return true
 }
