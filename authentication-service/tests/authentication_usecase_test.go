@@ -1,11 +1,12 @@
-package usecase
+package tests
 
 import (
 	"authentication_service/cmd/config"
 	"authentication_service/cmd/models/domain"
 	"authentication_service/cmd/models/web"
 	"authentication_service/cmd/repository"
-	"database/sql"
+	"authentication_service/cmd/usecase"
+	"authentication_service/pkg"
 	"log"
 	"testing"
 
@@ -15,15 +16,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// truncateUsers as truncate table users
-func truncateUsers(db *sql.DB) {
-	db.Exec("TRUNCATE users")
-}
-
 // Function register random user
-func RegisterRandomUser(t *testing.T) domain.User {
+func registerRandomUserUseCase(t *testing.T) domain.User {
 	// Load file .env
-	godotenv.Load("../../.env")
+	godotenv.Load("../.env")
 	// Open connection
 	// Connection to DB
 	conn := config.SetupDB()
@@ -33,12 +29,12 @@ func RegisterRandomUser(t *testing.T) domain.User {
 	defer conn.Close()
 
 	// Truncate table users before test running
-	truncateUsers(conn)
+	pkg.TruncateUsers(conn)
 
 	// Used repository
 	authenticationRepository := repository.NewRepositoryUser(conn)
 	// Use usecase
-	authenticationUseCase := NewUseCaseUser(authenticationRepository)
+	authenticationUseCase := usecase.NewUseCaseUser(authenticationRepository)
 
 	// Getting random province and regencies for city
 	province := jabufaker.RandomProvince()
@@ -83,15 +79,15 @@ func RegisterRandomUser(t *testing.T) domain.User {
 
 // TestRegisterSuccess as test register random user is exist
 func TestRegisterSuccess(t *testing.T) {
-	RegisterRandomUser(t)
+	registerRandomUserUseCase(t)
 }
 
 func TestRegisterFailEmailIsAvailable(t *testing.T) {
 	// Register Random user
-	newUser := RegisterRandomUser(t)
+	newUser := registerRandomUserUseCase(t)
 
 	// Load file .env
-	godotenv.Load("../../.env")
+	godotenv.Load("../.env")
 	// Open connection
 	// Connection to DB
 	conn := config.SetupDB()
@@ -103,7 +99,7 @@ func TestRegisterFailEmailIsAvailable(t *testing.T) {
 	// Used repository
 	authenticationRepository := repository.NewRepositoryUser(conn)
 	// Use usecase
-	authenticationUseCase := NewUseCaseUser(authenticationRepository)
+	authenticationUseCase := usecase.NewUseCaseUser(authenticationRepository)
 
 	user := web.RegisterInput{
 		Fullname: newUser.Fullname,

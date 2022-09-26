@@ -1,10 +1,11 @@
-package repository
+package tests
 
 import (
 	"authentication_service/cmd/config"
 	"authentication_service/cmd/models/domain"
+	"authentication_service/cmd/repository"
+	"authentication_service/pkg"
 	"context"
-	"database/sql"
 	"log"
 	"testing"
 	"time"
@@ -16,15 +17,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// truncateUsers as truncate table users
-func truncateUsers(db *sql.DB) {
-	db.Exec("TRUNCATE users")
-}
-
 // InsertRandomUser as function insert random user and if success return new user
 func InsertRandomUser(t *testing.T) domain.User {
 	// Load file .env
-	godotenv.Load("../../.env")
+	godotenv.Load("../.env")
 	// Open connection
 	// Connection to DB
 	conn := config.SetupDB()
@@ -34,10 +30,10 @@ func InsertRandomUser(t *testing.T) domain.User {
 	defer conn.Close()
 
 	// Truncate table users before test running
-	truncateUsers(conn)
+	pkg.TruncateUsers(conn)
 
 	// Used repository
-	repo := NewRepositoryUser(conn)
+	repo := repository.NewRepositoryUser(conn)
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
@@ -102,7 +98,7 @@ func TestInsertUserSuccess(t *testing.T) {
 // TestCheckEmailIsAvailable as check email is available if yes, return true
 func TestCheckEmailIsAvailable(t *testing.T) {
 	// Load file .env
-	godotenv.Load("../../.env")
+	godotenv.Load("../.env")
 	// Open connection
 	// Connection to DB
 	conn := config.SetupDB()
@@ -112,10 +108,10 @@ func TestCheckEmailIsAvailable(t *testing.T) {
 	defer conn.Close()
 
 	// Truncate table users before test running
-	truncateUsers(conn)
+	pkg.TruncateUsers(conn)
 
 	// Used repository
-	repo := NewRepositoryUser(conn)
+	repo := repository.NewRepositoryUser(conn)
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
@@ -134,7 +130,7 @@ func TestCheckEmailIsAvailable(t *testing.T) {
 // TestCheckEmailIsNotAvailable as check email is available if yes, return false
 func TestCheckEmailIsNotAvailable(t *testing.T) {
 	// Load file .env
-	godotenv.Load("../../.env")
+	godotenv.Load("../.env")
 	// Open connection
 	// Connection to DB
 	conn := config.SetupDB()
@@ -144,10 +140,10 @@ func TestCheckEmailIsNotAvailable(t *testing.T) {
 	defer conn.Close()
 
 	// Truncate table users before test running
-	truncateUsers(conn)
+	pkg.TruncateUsers(conn)
 
 	// Used repository
-	repo := NewRepositoryUser(conn)
+	repo := repository.NewRepositoryUser(conn)
 
 	// create context
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
