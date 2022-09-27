@@ -1,0 +1,275 @@
+openapi: '3.0.2'
+info:
+  title: Authentication Service (Bookmarket) 
+  version: '1.0.0'
+  description: Api spesification for Authentication Service (Bookmarket)
+  contact:
+    name: Rizky Darmawan
+    email: darmawanrizky43@gmail.com
+    url: https://www.linkedin.com/in/rizkydarmawan/
+servers:
+  - url: http://localhost:80
+paths:
+  /api/v1/register:
+    post:
+      summary: Register users
+      tags:
+        - "Auth"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Register"
+            example:
+              fullname: Jhon Swaller
+              email: jhon@test.com
+              address: Jl. Jalan
+              city: Binjai
+              province: Sumatera Utara
+              mobile: 082234567891
+              password: password
+              role: admin
+      responses:
+        200:
+          description: Register success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  status:
+                    type: string
+                  message:
+                    type: string
+                example:
+                  code: 201
+                  status: success
+                  message: You have successfully registered
+        400:
+          description: Email already exists / Validation Errors
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/RegisterFailedEmailAlreadyExist"
+                  - $ref: "#/components/schemas/RegisterFailedValidationError"
+                example:
+                  RegisterFailedEmailAlreadyExist:
+                    code: 400
+                    status: error
+                    message: Register failed
+                    data: {
+                      errors: email already exist
+                    }
+                  RegisterFailedValidationError:
+                    code: 400
+                    status: error
+                    message: Register failed
+                    data: {
+                      errors: [
+                        "Key: 'RegisterInput.Fullname' Error:Field validation for 'Fullname' failed on the 'required' tag",
+                        "Key: 'RegisterInput.Email' Error:Field validation for 'Email' failed on the 'email' tag",
+                        "Key: 'RegisterInput.Address' Error:Field validation for 'Address' failed on the 'required' tag",
+                        "Key: 'RegisterInput.City' Error:Field validation for 'City' failed on the 'required' tag",
+                        "Key: 'RegisterInput.Province' Error:Field validation for 'Province' failed on the 'required' tag",
+                        "Key: 'RegisterInput.Mobile' Error:Field validation for 'Mobile' failed on the 'min' tag",
+                        "Key: 'RegisterInput.Password' Error:Field validation for 'Password' failed on the 'required' tag",
+                        "Key: 'RegisterInput.Role' Error:Field validation for 'Role' failed on the 'required' tag"
+                      ]
+                    }
+
+  /api/v1/login:
+    post:
+      summary: Login users
+      tags:
+        - "Auth"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Login"
+            example:
+              email: jhon@test.com
+              password: password
+      responses:
+        200:
+          description: Login success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                    format: int32
+                  status:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                example:
+                  code: 200
+                  status: success
+                  message: You are logged in
+                  data: {
+                    token : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiY2YzNDFmYmEtZThiOS00MDIzLTgyODEtNDcxYTE3OTZmYTVlIiwiZXhwIjoxNjY0MzM1NjMzfQ.N-3H2DYiRggu2yGvZmFDFZmSUR7cltG9LnJox_tMOVM"
+                  }
+        400:
+          description: Wrong email or password / Validation Errors
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/LoginFailedWrongEmailOrPassword"
+                  - $ref: "#/components/schemas/LoginFailedValidationError"
+                example:
+                  LoginFailedWrongEmailOrPassword:
+                    code: 400
+                    status: error
+                    message: login failed
+                    data: {
+                      errors: email or password incorrect
+                    }
+                  LoginFailedValidationError:
+                    code: 400
+                    status: error
+                    message: login failed"
+                    data: {
+                      errors: [
+                      "Key: 'LoginInput.Email' Error:Field validation for 'Email' failed on the 'email' tag",
+                      "Key: 'LoginInput.Password' Error:Field validation for 'Password' failed on the 'required' tag"
+                      ]
+                    }
+components:
+  schemas:
+
+# Components Schema Register
+    Register:
+      type: object
+      properties:
+        fullname:
+          type: string
+          required:
+            - "true"
+        email:
+          type: string
+          required:
+            - "true"
+          description: email must be unique.
+        address:
+          type: string
+          required:
+            - "true"
+        city:
+          type: string
+          required:
+            - "true"
+        province:
+          type: string
+          required:
+            - "true"
+        mobile:
+          type: string
+          required:
+            - "true" 
+          minimum: 10
+          maximum: 13
+        password:
+          type: string
+          required:
+            - "true"
+        Role:
+          type: string
+          required:
+            - "true"
+          enum:
+            - admin
+            - seller
+            - buyyer
+
+    RegisterFailedEmailAlreadyExist:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        status:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            errors:
+              type: string
+
+    RegisterFailedValidationError:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        status:
+          type: string
+        message:
+          type: string
+        data:
+          type: array
+          properties:
+            errors:
+              type: string
+# End Components Schema Register
+
+# Components Schema Login
+    Login:
+      type:
+        object
+      properties:
+        email:
+          type: string
+          required:
+            - "true"
+        password:
+          type: string
+          required:
+            - "true"
+    LoginFailedWrongEmailOrPassword:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        status:
+          type: string
+        message:
+          type: string
+        data:
+          type: array
+          properties:
+            errors:
+              type: string 
+    LoginFailedValidationError:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        status:
+          type: string
+        message:
+          type: string
+        data:
+          type: array
+          properties:
+            errors:
+              type: string 
+# End Components Schema Login
