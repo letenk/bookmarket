@@ -82,7 +82,7 @@ func TestRegisterSuccess(t *testing.T) {
 	registerRandomUserUseCase(t)
 }
 
-func TestRegisterFailEmailIsAvailable(t *testing.T) {
+func TestRegisterFailedEmailIsAvailable(t *testing.T) {
 	// Register Random user
 	newUser := registerRandomUserUseCase(t)
 
@@ -116,4 +116,70 @@ func TestRegisterFailEmailIsAvailable(t *testing.T) {
 	// Test pass
 	assert.NotNil(t, err)
 	assert.Equal(t, err.Error(), "email already exist")
+}
+
+func TestLoginUsecase(t *testing.T) {
+	// Load file .env
+	godotenv.Load("../.env")
+	// Open connection
+	// Connection to DB
+	conn := config.SetupDB()
+	if conn == nil {
+		log.Panic("Can't connect to Postgres!")
+	}
+	defer conn.Close()
+
+	// Used repository
+	authenticationRepository := repository.NewRepositoryUser(conn)
+	// Use usecase
+	authenticationUseCase := usecase.NewUseCaseUser(authenticationRepository)
+
+	// Register Random user
+	newUser := registerRandomUserUseCase(t)
+
+	t.Run("Test login success", func(t *testing.T) {
+		// Create data for payload
+		payload := web.LoginInput{
+			Email:    newUser.Email,
+			Password: "password",
+		}
+
+		token, err := authenticationUseCase.Login(payload)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		// Test pass
+		assert.NotEmpty(t, token)
+	})
+
+	t.Run("Test wrong email", func(t *testing.T) {
+		// Create data for payload
+		payload := web.LoginInput{
+			Email:    "wrong",
+			Password: "password",
+		}
+
+		token, err := authenticationUseCase.Login(payload)
+
+		// Test pass
+		assert.NotNil(t, err)
+		assert.Equal(t, "email or password incorrect", err.Error())
+		assert.Empty(t, token)
+	})
+
+	t.Run("Test wrong password", func(t *testing.T) {
+		// Create data for payload
+		payload := web.LoginInput{
+			Email:    newUser.Email,
+			Password: "wrong",
+		}
+
+		token, err := authenticationUseCase.Login(payload)
+
+		// Test pass
+		assert.NotNil(t, err)
+		assert.Equal(t, "email or password incorrect", err.Error())
+		assert.Empty(t, token)
+	})
 }

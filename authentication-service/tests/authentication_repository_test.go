@@ -95,8 +95,7 @@ func TestInsertUserSuccess(t *testing.T) {
 	InsertRandomUser(t)
 }
 
-// TestCheckEmailIsAvailable as check email is available if yes, return true
-func TestCheckEmailIsAvailable(t *testing.T) {
+func TestCheckEmail(t *testing.T) {
 	// Load file .env
 	godotenv.Load("../.env")
 	// Open connection
@@ -117,18 +116,28 @@ func TestCheckEmailIsAvailable(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
-	// Insert Random user
-	newUser := InsertRandomUser(t)
+	t.Run("Check email is available", func(t *testing.T) {
 
-	// Find by email
-	checkEmail := repo.EmailIsAvailable(ctx, newUser.Email)
+		// Insert Random user
+		newUser := InsertRandomUser(t)
 
-	// Test pass
-	assert.True(t, checkEmail)
+		// Find by email
+		checkEmail := repo.EmailIsAvailable(ctx, newUser.Email)
+
+		// Test pass
+		assert.True(t, checkEmail)
+	})
+
+	t.Run("Check email is not available", func(t *testing.T) {
+		// Find by email
+		checkEmail := repo.EmailIsAvailable(ctx, "fail@test.com")
+
+		// Test Pass
+		assert.False(t, checkEmail)
+	})
 }
 
-// TestCheckEmailIsNotAvailable as check email is available if yes, return false
-func TestCheckEmailIsNotAvailable(t *testing.T) {
+func TestFindByEmail(t *testing.T) {
 	// Load file .env
 	godotenv.Load("../.env")
 	// Open connection
@@ -149,9 +158,25 @@ func TestCheckEmailIsNotAvailable(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
-	// Find by email
-	checkEmail := repo.EmailIsAvailable(ctx, "fail@test.com")
+	// Create random user
+	newUser := InsertRandomUser(t)
 
-	// Test Pass
-	assert.False(t, checkEmail)
+	user, err := repo.FindByEmail(ctx, newUser.Email)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// Test pass
+	assert.Equal(t, newUser.ID, user.ID)
+	assert.Equal(t, newUser.Fullname, user.Fullname)
+	assert.Equal(t, newUser.Email, user.Email)
+	assert.Equal(t, newUser.Address, user.Address)
+	assert.Equal(t, newUser.City, user.City)
+	assert.Equal(t, newUser.Province, user.Province)
+	assert.Equal(t, newUser.Mobile, user.Mobile)
+	assert.Equal(t, newUser.Password, user.Password)
+	assert.Equal(t, newUser.Role, user.Role)
+	assert.Equal(t, newUser.CreatedAt, user.CreatedAt)
+	assert.NotEmpty(t, user.CreatedAt)
+	assert.NotEmpty(t, user.UpdatedAt)
 }

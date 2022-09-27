@@ -188,3 +188,205 @@ func TestRegisterHandlerFailed(t *testing.T) {
 		assert.NotEmpty(t, responseBody["data"].(map[string]interface{})["errors"])
 	})
 }
+
+func loginRandomUserHandler(t *testing.T) string {
+	// Load file .env
+	godotenv.Load("../.env")
+	// Open connection
+	// Connection to DB
+	conn := config.SetupDB()
+	if conn == nil {
+		log.Panic("Can't connect to Postgres!")
+	}
+	defer conn.Close()
+
+	// Use route
+	router := routes.SetupRouter(conn)
+
+	// Register
+	newUser := registerRandomUserHandler(t)
+
+	// payload
+	payload := web.LoginInput{
+		Email:    newUser.Email,
+		Password: "password",
+	}
+
+	// Data Body
+	dataBody := fmt.Sprintf(`{"email": "%s", "password": "%s"}`, payload.Email, payload.Password)
+
+	// Create reader
+	requestBody := strings.NewReader(dataBody)
+
+	// Create request
+	request := httptest.NewRequest(http.MethodPost, "http://localhost:80/api/v1/login", requestBody)
+	// Added header content type
+	request.Header.Add("Content-Type", "application/json")
+
+	// Create recorder
+	recorder := httptest.NewRecorder()
+
+	// Run handler
+	router.ServeHTTP(recorder, request)
+
+	// Get response
+	response := recorder.Result()
+
+	// Read response
+	body, _ := io.ReadAll(response.Body)
+	var responseBody map[string]interface{}
+	json.Unmarshal(body, &responseBody)
+
+	// Test pass
+	assert.Equal(t, 200, response.StatusCode)
+	assert.Equal(t, 200, int(responseBody["code"].(float64)))
+	assert.Equal(t, "success", responseBody["status"])
+	assert.Equal(t, "You are logged in", responseBody["message"])
+
+	token := responseBody["data"].(map[string]interface{})["token"]
+	assert.NotEmpty(t, token)
+	// Return token to reused by function required authorization
+	return token.(string)
+}
+
+func TestLoginHandlerSuccess(t *testing.T) {
+	loginRandomUserHandler(t)
+}
+
+func TestLoginFailed(t *testing.T) {
+	// Load file .env
+	godotenv.Load("../.env")
+	// Open connection
+	// Connection to DB
+	conn := config.SetupDB()
+	if conn == nil {
+		log.Panic("Can't connect to Postgres!")
+	}
+	defer conn.Close()
+
+	// Use route
+	router := routes.SetupRouter(conn)
+
+	// Register new user
+	newUser := registerRandomUserHandler(t)
+
+	t.Run("Login failed wrong email", func(t *testing.T) {
+		// payload
+		payload := web.LoginInput{
+			Email:    "wrong@test.com",
+			Password: "password",
+		}
+
+		// Data Body
+		dataBody := fmt.Sprintf(`{"email": "%s", "password": "%s"}`, payload.Email, payload.Password)
+
+		// Create reader
+		requestBody := strings.NewReader(dataBody)
+
+		// Create request
+		request := httptest.NewRequest(http.MethodPost, "http://localhost:80/api/v1/login", requestBody)
+		// Added header content type
+		request.Header.Add("Content-Type", "application/json")
+
+		// Create recorder
+		recorder := httptest.NewRecorder()
+
+		// Run handler
+		router.ServeHTTP(recorder, request)
+
+		// Get response
+		response := recorder.Result()
+
+		// Read response
+		body, _ := io.ReadAll(response.Body)
+		var responseBody map[string]interface{}
+		json.Unmarshal(body, &responseBody)
+
+		// Test pass
+		assert.Equal(t, 400, response.StatusCode)
+		assert.Equal(t, 400, int(responseBody["code"].(float64)))
+		assert.Equal(t, "error", responseBody["status"])
+		assert.Equal(t, "login failed", responseBody["message"])
+		assert.Equal(t, "email or password incorrect", responseBody["data"].(map[string]interface{})["errors"])
+	})
+
+	t.Run("Login failed wrong password", func(t *testing.T) {
+		// payload
+		payload := web.LoginInput{
+			Email:    newUser.Email,
+			Password: "wrong",
+		}
+
+		// Data Body
+		dataBody := fmt.Sprintf(`{"email": "%s", "password": "%s"}`, payload.Email, payload.Password)
+
+		// Create reader
+		requestBody := strings.NewReader(dataBody)
+
+		// Create request
+		request := httptest.NewRequest(http.MethodPost, "http://localhost:80/api/v1/login", requestBody)
+		// Added header content type
+		request.Header.Add("Content-Type", "application/json")
+
+		// Create recorder
+		recorder := httptest.NewRecorder()
+
+		// Run handler
+		router.ServeHTTP(recorder, request)
+
+		// Get response
+		response := recorder.Result()
+
+		// Read response
+		body, _ := io.ReadAll(response.Body)
+		var responseBody map[string]interface{}
+		json.Unmarshal(body, &responseBody)
+
+		// Test pass
+		assert.Equal(t, 400, response.StatusCode)
+		assert.Equal(t, 400, int(responseBody["code"].(float64)))
+		assert.Equal(t, "error", responseBody["status"])
+		assert.Equal(t, "login failed", responseBody["message"])
+		assert.Equal(t, "email or password incorrect", responseBody["data"].(map[string]interface{})["errors"])
+	})
+
+	t.Run("Login failed validation error", func(t *testing.T) {
+		// payload
+		payload := web.LoginInput{
+			Email:    "emailtest.com",
+			Password: "",
+		}
+
+		// Data Body
+		dataBody := fmt.Sprintf(`{"email": "%s", "password": "%s"}`, payload.Email, payload.Password)
+
+		// Create reader
+		requestBody := strings.NewReader(dataBody)
+
+		// Create request
+		request := httptest.NewRequest(http.MethodPost, "http://localhost:80/api/v1/login", requestBody)
+		// Added header content type
+		request.Header.Add("Content-Type", "application/json")
+
+		// Create recorder
+		recorder := httptest.NewRecorder()
+
+		// Run handler
+		router.ServeHTTP(recorder, request)
+
+		// Get response
+		response := recorder.Result()
+
+		// Read response
+		body, _ := io.ReadAll(response.Body)
+		var responseBody map[string]interface{}
+		json.Unmarshal(body, &responseBody)
+
+		// Test pass
+		assert.Equal(t, 400, response.StatusCode)
+		assert.Equal(t, 400, int(responseBody["code"].(float64)))
+		assert.Equal(t, "error", responseBody["status"])
+		assert.Equal(t, "login failed", responseBody["message"])
+		assert.NotEmpty(t, responseBody["data"].(map[string]interface{})["errors"])
+	})
+}

@@ -8,6 +8,7 @@ import (
 
 type Repository interface {
 	Insert(ctx context.Context, user domain.User) (domain.User, error)
+	FindByEmail(ctx context.Context, email string) (domain.User, error)
 	EmailIsAvailable(ctx context.Context, email string) bool
 }
 
@@ -60,6 +61,39 @@ func (r *repository) Insert(ctx context.Context, user domain.User) (domain.User,
 	}
 
 	return newUser, nil
+}
+
+func (r *repository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
+	var user domain.User
+
+	stmt := `SELECT
+				id, fullname, email, address, city, province, mobile, password, role, created_at, updated_at
+			FROM 
+				users
+			WHERE
+				email = $1
+			LIMIT 1`
+
+	row := r.db.QueryRowContext(ctx, stmt, email)
+	err := row.Scan(
+		&user.ID,
+		&user.Fullname,
+		&user.Email,
+		&user.Address,
+		&user.City,
+		&user.Province,
+		&user.Mobile,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		return user, err
+	}
+
+	return user, nil
 }
 
 // Find by email

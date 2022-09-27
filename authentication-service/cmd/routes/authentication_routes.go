@@ -32,6 +32,8 @@ func SetupRouter(conn *sql.DB) *gin.Engine {
 	api := router.Group("/api/v1")
 	// Endpoint register
 	api.POST("/register", authenticationHandlers.Register)
+	// Endpoint login
+	api.POST("/login", authenticationHandlers.Login)
 
 	return router
 }

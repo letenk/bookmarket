@@ -6,14 +6,17 @@ import (
 	"authentication_service/cmd/repository"
 	"context"
 	"errors"
+	"os"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UseCase interface {
 	Register(input web.RegisterInput) (domain.User, error)
+	Login(input web.LoginInput) (string, error)
 }
 
 type useCase struct {
@@ -65,4 +68,56 @@ func (u *useCase) Register(input web.RegisterInput) (domain.User, error) {
 	}
 
 	return newUser, nil
+}
+
+type Claim struct {
+	UserID string `json:"user_id"`
+	jwt.StandardClaims
+}
+
+func (u *useCase) Login(input web.LoginInput) (string, error) {
+	// Create context with timeout duration 3 second
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	// Find user by email
+	user, err := u.repository.FindByEmail(ctx, input.Email)
+	if user.ID == uuid.Nil {
+		return "", errors.New("email or password incorrect")
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	// If user available, compare password
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
+	if err != nil {
+		return "", errors.New("email or password incorrect")
+	}
+
+	// If the password is matched, Generate token jwt
+	// Create 1 day token active
+	expirationTime := time.Now().AddDate(0, 0, 1)
+
+	// Create claim for payload tokne
+	claim := Claim{
+		UserID: user.ID.String(),
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	// Create token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
+	// Get secret key
+	SecretJWT := os.Getenv("SECRET_JWT")
+	// Sifned token with secret key
+	signedToken, err := token.SignedString([]byte(SecretJWT))
+	if err != nil {
+		return "", err
+	}
+
+	// If success, return token
+	return signedToken, nil
 }
